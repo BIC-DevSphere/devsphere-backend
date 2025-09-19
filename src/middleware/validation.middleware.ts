@@ -50,7 +50,9 @@ export function validateParams<T extends ZodTypeAny>(schema: T) {
 export function validateQuery<T extends ZodTypeAny>(schema: T) {
     return (req: Request, res: Response, next: NextFunction) => {
         try {
-            req.query = schema.parse(req.query) as any;
+            const parsedQuery = schema.parse(req.query);
+            // Store in a separate property
+            (req as any).validatedQuery = parsedQuery;
             next();
         } catch (error) {
             if (error instanceof ZodError) {

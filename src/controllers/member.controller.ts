@@ -24,8 +24,9 @@ class MemberController{
     
 async getMembers(req: Request, res: Response) {
     try {
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = parseInt(req.query.limit as string) || 10;
+    const query = (req as any).validatedQuery;
+    const page = query.page;
+    const limit = query.limit;
         const skip = (page - 1) * limit;
 
         const result = await memberServices.getMembers({ skip, limit });
@@ -87,6 +88,34 @@ async getMembers(req: Request, res: Response) {
             
         }
 
+    }
+
+    async getMember(req: Request, res: Response) {
+        try {
+            const memberId = req.params.id;
+
+            const result = await memberServices.getMember(memberId);
+
+            if (!result.success) {
+                return res
+                    .status(HTTP.NOT_FOUND)
+                    .json(ErrorResponse(HTTP.NOT_FOUND, result.error));
+            }
+
+            return res
+                .status(HTTP.OK)
+                .json(SuccessResponse(HTTP.OK, "Member fetched successfully", result.data));
+        } catch (error) {
+            console.log(`Get Member Controller Error: ${error}`);
+            return res
+                .status(HTTP.INTERNAL)
+                .json(
+                    ErrorResponse(
+                        HTTP.INTERNAL,
+                        (error as Error).message || "Internal Server Error"
+                    )
+                );
+        }
     }
 }
 

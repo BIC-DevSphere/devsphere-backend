@@ -1,57 +1,62 @@
 import { z } from "zod";
 
-export const memberSchema = z.object({
-  name: z.string({
-    error: (issue) => {
-      if (issue.input === undefined) {
-      return "Name is required";
-      }
-      if (issue.code === "invalid_type") {
-        return "Name must be a string";
-      }
-      return undefined;
-    },
+// Create Member Schema
+export const createMemberSchema = z
+  .object({
+    name: z
+      .string({ message: "Name is required" })
+      .min(1, "Name is required")
+      .max(100, "Name must not exceed 100 characters"),
+
+    role: z
+      .string({ message: "Role is required" })
+      .min(1, "Role is required"),
+
+    year: z.preprocess(
+      (val) =>
+        typeof val === "string" || typeof val === "number"
+          ? new Date(val)
+          : val,
+      z.date({ message: "Year must be a valid date" })
+    ),
+
+    status: z.enum(["ACTIVE", "INACTIVE"]).optional(),
   })
-  .min(1, { message: "Name is required" }),
+  .strict(); // disallow unknown keys like "names"
 
-  role: z.string({
-    error: (issue) => {
-      if (issue.input === undefined) {
-      return "Role is required";
-      }
-      if (issue.code === "invalid_type") {
-        return "Role must be a string";
-      }
-      return undefined;
-    },
+// Update Member Schema (Partial)
+export const updateMemberSchema = createMemberSchema.partial().strict();
+
+// Member Params Schema
+export const memberParamsSchema = z
+  .object({
+    id: z.string().uuid("Invalid member ID format"),
   })
-  .min(1, { message: "Role is required" }),
+  .strict();
 
-  year: z.preprocess(
-    (val) =>
-      typeof val === "string" || typeof val === "number"
-        ? new Date(val)
-        : val,
-    z.date({
-      error: (issue) => {
-        if (issue.code === "invalid_type") {
-          return "Year must be a valid date";
-        }
-        if (issue.code === "invalid_type" && issue.input === undefined) {
-          return "Year is required";
-        }
-        return undefined;
-      },
-    })
-  ),
+// Get Members Query Schema
+export const getMembersQuerySchema = z
+  .object({
+    page: z
+      .string()
+      .regex(/^\d+$/, "Page must be a positive number")
+      .transform(Number)
+      .refine((val) => val > 0, "Page must be greater than 0")
+      .optional()
+      .default(1),
 
-  status: z.enum(["ACTIVE", "INACTIVE"], {
-    error: "Status must be either ACTIVE or INACTIVE",
-  }).optional(),
-});
+    limit: z
+      .string()
+      .regex(/^\d+$/, "Limit must be a positive number")
+      .transform(Number)
+      .refine((val) => val > 0 && val <= 100, "Limit must be between 1 and 100")
+      .optional()
+      .default(10),
+  })
+  .strict();
 
-export const createMemberSchema = memberSchema;
-export const updateMemberSchema = memberSchema.partial();
-
+// TypeScript Types
 export type CreateMemberInput = z.infer<typeof createMemberSchema>;
 export type UpdateMemberInput = z.infer<typeof updateMemberSchema>;
+export type MemberParamsInput = z.infer<typeof memberParamsSchema>;
+export type GetMembersQueryInput = z.infer<typeof getMembersQuerySchema>;

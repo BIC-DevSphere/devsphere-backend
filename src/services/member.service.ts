@@ -1,7 +1,6 @@
 import prisma from "@/db/prisma";
 import { prismaSafe } from "@/lib/prismaSafe";
 import type { Member } from "@/types/member.types";
-import { updateMemberSchema } from "@/lib/zod/member.schema";
 
 class MemberServices{
     async createMember(member: Member){
@@ -100,6 +99,24 @@ class MemberServices{
         } catch (error) {
             console.log(`Failed to fetch members, ${error}`)
             return {success : false, error : error}
+        }
+    }
+
+    async getMember(memberId: string) {
+        try {
+            const [error, result] = await prismaSafe(
+                prisma.member.findUnique({
+                    where: { id: memberId },
+                })
+            );
+
+            if (error) return { success: false, error };
+            if (!result) return { success: false, error: "Member not found" };
+
+            return { success: true, data: result };
+        } catch (error) {
+            console.log(`Failed to fetch member, ${error}`);
+            return { success: false, error };
         }
     }
 }
