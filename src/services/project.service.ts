@@ -9,33 +9,38 @@ import cloudinary from '@/lib/cloudinary';
 import { uploadImageToCloudinary } from '@/utils/cloudinary.uploader';
 
 class ProjectServices {
-  async getAllProjects() {
+  async getAllProjects({ skip, limit }: { skip?: number; limit?: number }) {
     try {
       const [error, projectsResult] = await prismaSafe(
-        prisma.project.findMany({
-          include: {
-            ProjectTags: {
-              select: {
-                tag: true,
+        Promise.all([
+          prisma.project.findMany({
+            skip: skip,
+            take: limit,
+            include: {
+              ProjectTags: {
+                select: {
+                  tag: true,
+                },
               },
-            },
-            ProjectContributors: {
-              select: {
-                contributor: {
-                  select: {
-                    id: true,
-                    name: true,
-                    avatarUrl: true,
-                    githubUsername: true,
+              ProjectContributors: {
+                select: {
+                  contributor: {
+                    select: {
+                      id: true,
+                      name: true,
+                      avatarUrl: true,
+                      githubUsername: true,
+                    },
                   },
                 },
               },
             },
-          },
-          orderBy: {
-            updatedAt: 'desc',
-          },
-        })
+            orderBy: {
+              updatedAt: 'desc',
+            },
+          }),
+          prisma.project.count(),
+        ])
       );
 
       if (error) {
@@ -46,7 +51,9 @@ class ProjectServices {
         return { success: false, error: 'No projects found' };
       }
 
-      const mappedProjects: GetAllProjects[] = projectsResult.map((project) => ({
+      const [projects, total] = projectsResult;
+
+      const mappedProjects: GetAllProjects[] = projects.map((project) => ({
         id: project.id,
         name: project.name,
         githubLink: project.githubLink,
@@ -60,7 +67,7 @@ class ProjectServices {
         updatedAt: project.updatedAt,
       }));
 
-      return { success: true, data: mappedProjects };
+      return { success: true, data: { mappedProjects, total } };
     } catch (error) {
       console.error('Error fetching projects:', error);
       return { success: false, error: error };

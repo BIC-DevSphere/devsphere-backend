@@ -1,8 +1,9 @@
 interface PaginationMeta {
     total: number;
     page: number;
-    limit: number;
+    // limit: number;
     totalPages: number;
+    hasNext: boolean;
 }
 
 interface PaginationResponseData<T = any> {
@@ -22,7 +23,7 @@ export default function PaginationResponse<T = any>(
     limit: number
 ): PaginationResponseData<T> {
     const totalPages = Math.ceil(total / limit);
-
+    const hasNext = page < totalPages;
     return {
         success: true,
         message,
@@ -31,8 +32,9 @@ export default function PaginationResponse<T = any>(
         pagination: {
             total,
             page,
-            limit,
+            // limit,
             totalPages,
+            hasNext: hasNext,
         },
     };
 }
