@@ -57,7 +57,7 @@ export const isModerator = async (req: Request, res: Response, next: NextFunctio
         const session = await auth.api.getSession({ headers });
         if (session) {
             const user = session.userWithRole;
-            if (user?.role === "MODERATOR") {
+            if (user?.role === "MODERATOR" || user?.role === "ADMIN") {
                 next();
             } else {
                 return res.status(HTTP.UNAUTHORIZED).json(ErrorResponse(HTTP.UNAUTHORIZED, 'Unauthorized'));

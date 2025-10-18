@@ -6,6 +6,7 @@ import type { CreateProjectInput, UpdateProjectInput } from '@/lib/zod/project.s
 import { getRepoNameFromGithubUrl } from '@/utils/github.js';
 import { tagServices } from '@/services/tag.service.js';
 import { contributorServices } from '@/services/contributor.service.js';
+import { uploadImageToCloudinary } from '@/utils/cloudinary.uploader.js';
 
 class ProjectController {
   async getAllProjects(req: Request, res: Response) {
@@ -157,6 +158,33 @@ class ProjectController {
     } catch (error) {
       console.error('Error in deleting project:', error);
       res.status(HTTP.INTERNAL).json(ErrorResponse(HTTP.INTERNAL, 'Internal Server Error'));
+    }
+  }
+
+  async uploadImage(req: Request, res: Response) {
+    try {
+      if (!req.file) return res
+      .status(HTTP.BAD_REQUEST)
+      .json(
+        ErrorResponse(HTTP.BAD_REQUEST, "Image is required")
+      )
+        const image = req.file;
+        
+        const uploadResult = await uploadImageToCloudinary(image!.path, {folder: "projects"})
+        if (!uploadResult.success) {
+          return res
+          .status(HTTP.BAD_REQUEST)
+          .json(
+            ErrorResponse(HTTP.BAD_REQUEST, uploadResult.error|| 'Failed to upload image.')
+          );
+        }
+        return res
+          .status(HTTP.OK)
+          .json(
+            SuccessResponse(HTTP.OK,"Uploaded successfully", uploadResult.url)
+          );
+    } catch (error) {
+      console.log("Error whole uploading image: ", error)
     }
   }
 }
