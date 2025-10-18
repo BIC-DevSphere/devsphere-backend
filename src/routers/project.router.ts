@@ -25,6 +25,11 @@ projectRouter.post(
   projectController.addProject
 );
 
+projectRouter.post(
+  '/upload',
+  upload.single('image'),
+  projectController.uploadImage
+)
 projectRouter.patch(
   '/:id',
   upload.single('thumbnail'),
